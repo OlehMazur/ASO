@@ -10,13 +10,13 @@ import sys
 
 print("Optimization of the assortment given a choice model")
 
-min_capacity = 5# len(Prod_List_Max)
-max_capacity = 2000#unconstrained
+min_capacity = 0  # len(Prod_List_Max)
+max_capacity = 200#unconstrained
 
 verbose=True #should GUROBI print the steps of solving of the problem?
 
 algo_chosen = 'GDT'
-data_version =  '030'   
+data_version =  '096'  #096 
     
 #In the case of algo_chosen, those parameters tune the number of sub-columns to boost the generation
 threshold = 0.01
@@ -59,13 +59,21 @@ with open(abs_file_transaction, 'rb') as sales:
     predicted_rev_data = my_depickler.load()
     products_data = my_depickler.load()
     ass_data = my_depickler.load()
- 
+    rev_all_products = my_depickler.load()
+    max_ass_num_manual = my_depickler.load()
+    '''
+    products_test = my_depickler.load()
+    ass_test = my_depickler.load()
+    Revenue_test = my_depickler.load()
+    '''
+''' 
 print('')    
 print('The assortment with higher real revenue has been found ! Number of products:' , len(Prod_List_Max))
 if (min_capacity < len(Prod_List_Max)):
     print('The min capacity constraint has been violated ! It should be ',len(Prod_List_Max) , 'at least.')
     #sys.exit()
 print('')  
+'''
  
 if(algo_chosen=='GDT'):    
     print("Opening choice model, format GDT")
@@ -92,8 +100,8 @@ Sigma = sigma_GDT_sorted[:adj_lambdas_num]
 
 if(algo_chosen=='GDT' or algo_chosen=='gen' ):
     #adj_lambdas_num = 10 #----> number of lambdas that explains more of the sales
-    Lambda = lambda_GDT_sorted #[:adj_lambdas_num]  
-    Sigma = sigma_GDT_sorted   #[:adj_lambdas_num]    
+    Lambda = lambda_GDT_sorted#[:adj_lambdas_num]  
+    Sigma = sigma_GDT_sorted#[:adj_lambdas_num]    
     t1 = time.time()
     #fcns_asstopt.run_asstopt_GDT
     [x_found, obj_val] = fcns_asstopt.run_asstopt_GDT(Lambda, Sigma, Revenue[:len(Sigma.T)], min_capacity, max_capacity,
@@ -140,7 +148,8 @@ for el, val in enumerate(x_found):
             aso_result.append(v[1])
     
 same_prod= np.intersect1d(Prod_List_Max,  aso_result)
-diff_prod = np.setdiff1d(aso_result, Prod_List_Max)    
+diff_prod = np.setdiff1d(aso_result, Prod_List_Max)   
+exc_prod = np.setdiff1d(Prod_List_Max , same_prod)
 """
 with open(abs_file_output, 'rb') as out:
     my_depickler = pickle.Unpickler(out)
@@ -235,8 +244,9 @@ for product in real_revenue:
         if (product[0] in row[1]):
             #if (len(row[1]) < 2):
             Rev_BaselineNew +=product[1]*row[0]
+            
 
-
+            
 #test    
 #Rev_BaselineNew += ggg                
 """           
@@ -260,6 +270,7 @@ ggg =  rr['pred'].values.sum()
                 
                 
 #all predicted by GDT model revenues   
+'''
 pred_data_res = []                
 for k,l in enumerate(ass_data):
     for i,j in enumerate(products_data):  
@@ -271,16 +282,88 @@ for k,l in enumerate(ass_data):
           
 df = pd.DataFrame(pred_data_res)    
 predicted_max_revenue_= np.float64(df.groupby(df[0]).sum().max())                    
+'''
+#t3 = time.time()
+pred_data_res = []                
+for (l, j) in predicted_rev_data.index:
+    for sigma in  sigma_prod_list:
+        if(j in sigma[1][:1]): #if(j in sigma[1][:1]):
+            pred_data_res.append( (l, j, predicted_rev_data[(l,j)]*sigma[0] ))
+            
+
+#t4 = time.time()   
+#print(t4-t3)                 
+#max_rev_test_GDT= np.sort(pred_data_res_test)[::-1][0]  
+pred_data_res_for_max = []
+for el in  pred_data_res:
+    pred_data_res_for_max.append( (el[0], el[2]))
+    
+df = pd.DataFrame(pred_data_res_for_max)  
+ss =df.groupby(df[0]).sum()   
+predicted_max_revenue_GDT= np.float64(ss.max())  
+max_ass_num_GDT= np.array(ss.sort_values(ss.columns[0], ascending = False).index)[0]
 
 
+prod_list_max_ass_GDT_val = []
+prod_list_max_ass_GDT = []
+for el in pred_data_res:
+    if el[0] == max_ass_num_GDT:
+        prod_list_max_ass_GDT_val.append( el[2])
+        prod_list_max_ass_GDT.append( (el[1], el[2]))
 
+
+prod_list_max_ass_GDT_sorted  = np.sort(prod_list_max_ass_GDT_val)[::-1][:len(aso_result)] 
+prod_list_max_ass_GDT_val  =prod_list_max_ass_GDT_sorted.sum()
+  
+
+prod_list_max_ass_GDT_sorted_main = []
+for el in prod_list_max_ass_GDT:
+    for el2 in prod_list_max_ass_GDT_sorted:
+        if (el[1] == el2):
+            prod_list_max_ass_GDT_sorted_main.append(el[0])
+
+
+#Expected revenue of the optimal assortment
+Pred_rev_GDT = 0 
+for q in rev_all_products:
+    for row in sigma_prod_list:
+        if ( (q[0] in aso_result) and (q[0] in row[1]) ):
+            #if (len(row[1]) < 2):
+            Pred_rev_GDT +=q[1]*row[0]  
+
+#based on manual choice of max ass
+prod_list_max_ass_GDT_val_manual = []
+prod_list_max_ass_GDT_manual = []
+for el in pred_data_res:
+    if el[0] == max_ass_num_manual:
+        prod_list_max_ass_GDT_val_manual.append( el[2])
+        prod_list_max_ass_GDT_manual.append( (el[1], el[2]))           
+            
+prod_list_max_ass_GDT_sorted_manual  = np.sort(prod_list_max_ass_GDT_val_manual)[::-1][:len(aso_result)] 
+prod_list_max_ass_GDT_val_manual  =prod_list_max_ass_GDT_sorted_manual.sum()
+
+prod_list_max_ass_GDT_sorted_main_manual = []
+for el in prod_list_max_ass_GDT_manual:
+    for el2 in prod_list_max_ass_GDT_sorted_manual:
+        if (el[1] == el2):
+            prod_list_max_ass_GDT_sorted_main_manual.append(el[0])
+ 
 print("Saving results")
 with open(abs_file_output, 'wb') as out:
     my_pickler = pickle.Pickler(out,protocol=2)
     my_pickler.dump(aso_result)
     my_pickler.dump(sigma_result)
 
-
+'''
+same_prod= np.intersect1d(prod_list_max_ass_GDT_sorted_main,  aso_result)
+diff_prod = np.setdiff1d(aso_result, prod_list_max_ass_GDT_sorted_main)   
+exc_prod = np.setdiff1d(prod_list_max_ass_GDT_sorted_main , same_prod)
+'''
+'''
+same_prod= np.intersect1d(prod_list_max_ass_GDT_sorted_main_manual,  aso_result)
+diff_prod = np.setdiff1d(aso_result, prod_list_max_ass_GDT_sorted_main_manual)   
+exc_prod = np.setdiff1d(prod_list_max_ass_GDT_sorted_main_manual , same_prod)
+'''
 
 print("Generated data, in file ", filename_transaction, "with nb_prod =", nb_prod, "products")
 print('')
@@ -300,14 +383,22 @@ print(list(diff_prod))
 print('')
 print("List of excluded products: ")
 print('')
-print (list(np.setdiff1d(Prod_List_Max , same_prod)))
+print (list(exc_prod))
 print('')
 print("Expected revenue of the optimal assortment:")
-print('{:04.2f}'.format(obj_val))
+print('{:04.2f}'.format(Pred_rev_GDT)) #obj_val
+print(obj_val, 'obj_val')
 print("Expected baseline revenue according to GDT model:")
-print('{:04.2f}'.format(Rev_BaselineNew) , " with max-method (",predicted_max_revenue_,")" )
+#print('{:04.2f}'.format(prod_list_max_ass_GDT_val) )
+#print(prod_list_max_ass_GDT_val_manual, 'manual')
+print(Rev_BaselineNew)
 print("Increase of revenue vs baseline:")
-print('{:04.2%}'.format( (obj_val - Rev_BaselineNew ) / Rev_BaselineNew))
+#print('{:04.2%}'.format( (obj_val - predicted_max_revenue_GDT ) / predicted_max_revenue_GDT))
+#print('{:04.2%}'.format( (Pred_rev_GDT - predicted_max_revenue_GDT ) / predicted_max_revenue_GDT))
+#print('{:04.2%}'.format( (obj_val - prod_list_max_ass_GDT_val ) / prod_list_max_ass_GDT_val))
+#print('{:04.2%}'.format( (obj_val - prod_list_max_ass_GDT_val_manual ) / prod_list_max_ass_GDT_val_manual), 'manual')
+print('{:04.2%}'.format( (Pred_rev_GDT - Rev_BaselineNew ) / Rev_BaselineNew))
+
 print('')
 print("Assortment optimization completed")
 

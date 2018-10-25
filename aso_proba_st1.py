@@ -12,16 +12,36 @@ import matplotlib.pyplot as plt
 import pickle
 import os
 
+
 print("################################# File generation_data_products_based.py #################################")
 print("Generation of the training and test sets")
 print("Use of the MMNL choice model to generate utilities on products.")
 
-data_version = '030'
-dataset = pd.read_csv("GDT_20.csv", delimiter = ";", decimal = ",", index_col = [0,1])
+data_version = '096' #096
+dataset = pd.read_csv("GDT_96.csv", delimiter = ";", decimal = ",", index_col = [0,1])
+dataset = dataset[dataset["PurchaseProb"] >=0.05] #0.05,  0.1
+
+'''
+for 0.01 = > many records with probabilites less than 2 % - bad model ?
+'''
+
+'''
+# split into train and test sets
+train_size = int(len(dataset) * 0.5)
+test_size = len(dataset) - train_size
+train, test = dataset.iloc[0:train_size,:], dataset.iloc[test_size:len(dataset),:]
+#print(len(train), len(test))
+'''
 
 Proba_product_ = dataset.iloc[:, -1]
 Proba_product_nc = dataset.iloc[:, -2]
 Revenue = dataset.iloc[:, 0]
+
+'''
+Proba_product_test = test.iloc[:, -1]
+Proba_product_nc_test = test.iloc[:, -2]
+Revenue_test = test.iloc[:, 0]
+'''
 
 products = []
 ass = []
@@ -30,9 +50,23 @@ for pr in products_data:
     products.append(pr[1])
     ass.append(pr[0])
 
+'''    
+products_test = []
+ass_test = []
+products_data_test = test.index
+for pr in products_data_test:
+    products_test.append(pr[1])
+    ass_test.append(pr[0])    
+'''    
+
 products = np.unique(products)
 products = np.insert(products, 0,0) #no choice
 ass = np.unique(ass)
+
+'''
+products_test = np.unique(products_test)
+ass_test = np.unique(ass_test)
+'''
 
 nb_prod = len(products) 
 nb_ass =  len(ass) # + no choice
@@ -92,6 +126,7 @@ for el in  prod_list_max:
             
                
 rev_max_prod  = list(set(rev_max_prod))
+rev_all_prod = list(set(rev_prod_list))
        
         
 filename_transaction = 'transaction_data_bal_'+data_version+'.dat'
@@ -115,7 +150,15 @@ with open(abs_file_transaction, 'wb') as sales:
     my_pickler.dump(Revenue) #test
     my_pickler.dump(products) #test
     my_pickler.dump(ass) #test
-
+    my_pickler.dump(rev_all_prod)
+    my_pickler.dump(max_ass_num)
+   
+    '''
+    my_pickler.dump(products_test)
+    my_pickler.dump(ass_test)
+    my_pickler.dump(Revenue_test)
+    my_pickler.dump(products_data_test) 
+    '''
 
     
 print("End of generation of data. File ", filename_transaction, "has been saved in /sample/data/.")

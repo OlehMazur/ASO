@@ -25,15 +25,33 @@ def run_asstopt(Lambda, Sigma, Revenue, min_capacity, max_capacity, verbose=Fals
     for i in real_products:
         x[i] = model.addVar(vtype=GRB.BINARY, name='x_%s' % i, obj=0)
     y = {}
+ 
     for k in range(nb_col):
         for i in range(nb_prod):
             y[k,i] = model.addVar(lb=0, vtype=GRB.CONTINUOUS, name='y_%s_%s' % (k,i), obj=Lambda[k]*Revenue[i])
-    
+ 
     model.update()
     model.ModelSense = -1 #Maximization
     model.update()
     
     #Creation of constraints
+    
+    
+    for k in range(nb_col):
+        for i in real_products:
+            for j in range(0,i):
+                if Sigma[k,j]==Sigma[k,i]:
+                    model.addConstr( y[k,i] - y[k,j] <= 2 - x[i] - x[j], name='indiff_1_%s_%s_%s' % (i,j,k))
+                    model.addConstr(-y[k, i] + y[k, j] <= 2 - x[i] - x[j], name='indiff_2_%s_%s_%s' % (i, j, k))
+   
+   
+    model.update()
+        
+    constrs = model.getConstrs()
+    for i in range(len(constrs)):
+        constrs[i].setAttr("Lazy", 2)
+    model.update()
+    print("nb of constrs: ", len(model.getConstrs()))
 
     
     for k in range(nb_col):
@@ -43,7 +61,7 @@ def run_asstopt(Lambda, Sigma, Revenue, min_capacity, max_capacity, verbose=Fals
     for k in range(nb_col):
         for i in real_products:
             model.addConstr( y[k,i] <= x[i] , name='%s_must_be_in_asst_TBC_by_permutation_%s' % (i,k) )
-    
+          
     for k in range(nb_col):
         for i in real_products:
             new_constraint = LinExpr()
@@ -61,6 +79,7 @@ def run_asstopt(Lambda, Sigma, Revenue, min_capacity, max_capacity, verbose=Fals
                 new_constraint += y[k,j]
         model.addConstr( new_constraint, GRB.EQUAL, 0, name='less_prefered_than_NO_PURCHASE_not_included_for_permutation_%s' % k )
     
+
     #no more than max_capacity products per assortment: capacity constraint
     model.addConstr( quicksum(x[i] for i in range(nb_prod)) <= max_capacity+1, name='capacity_constraint')
     
@@ -69,6 +88,8 @@ def run_asstopt(Lambda, Sigma, Revenue, min_capacity, max_capacity, verbose=Fals
     
     # Compute optimal solution
     model.update()
+    #model.setParam("Cutoff", 1899.33) #1764.30
+    #model.setParam("MIPGap", 0.5)
     model.optimize()
     obj_value = model.ObjVal
     x_found = np.zeros(nb_prod) 
@@ -198,7 +219,7 @@ def run_asstopt_GDT(Lambda, Sigma, Revenue, min_capacity, max_capacity, verbose=
    
    
     model.update()
-
+        
     constrs = model.getConstrs()
     for i in range(len(constrs)):
         constrs[i].setAttr("Lazy", 2)
@@ -210,7 +231,8 @@ def run_asstopt_GDT(Lambda, Sigma, Revenue, min_capacity, max_capacity, verbose=
     for k in range(nb_col):
         model.addConstr(quicksum(y[k, i] for i in range(nb_prod)) == 1,
                         name='one_choice_%s_per_permutation_%s' % (i, k))
-        
+     
+  
        
     for k in range(nb_col):
         for i in real_products:
@@ -236,7 +258,7 @@ def run_asstopt_GDT(Lambda, Sigma, Revenue, min_capacity, max_capacity, verbose=
         model.addConstr(new_constraint, GRB.EQUAL, 0,
                         name='less_prefered_than_NO_PURCHASE_not_included_for_permutation_%s' % k)
     
-
+    
     
     # no more than max_capacity products per assortment: capacity constraint
     model.addConstr(quicksum(x[i] for i in range(nb_prod)) <= max_capacity + 1, name='capacity_constraint')
@@ -255,9 +277,9 @@ def run_asstopt_GDT(Lambda, Sigma, Revenue, min_capacity, max_capacity, verbose=
     model.update()
     model.params.LazyConstraints = 0 #for callback use.
     model.setParam("NodefileStart", 0.1)
-    model.setParam("MIPGap", 0.02)
+    model.setParam("MIPGap", 0.035)
     #model.setParam("SolutionLimit", 15)
-    #model.setParam("Threads", 3)
+    model.setParam("Threads", 2)
     #model.optimize(my_callback)
     model.optimize()
     obj_value = model.ObjVal

@@ -69,16 +69,16 @@ def run_GDT(Inventories, Proba_product, ITERATIONS_MAX=10, eps_stop=0):
         
     
         # We choose 10 random columns with depending on the probability distribution lambda_found_bis
-        #set_k_possible = choose_n(utilities.repair_lambda(lambda_found_bis), 10)
+        #set_k_possible = choose_n(utilities.repair_lambda(lambda_found_bis), 5)
         
         
         set_k_possible = []
         d = utilities.repair_lambda(lambda_found_bis)
-        ff= np.sort(utilities.repair_lambda(lambda_found_bis))[::-1][:50] # 10(main) 40-70
+        ff= np.sort(utilities.repair_lambda(lambda_found_bis))[::-1][:20] # 10 (0,1) , 20 (0.05)
         for i, j in enumerate(d):
             if j in ff:
                 set_k_possible.append(i)
-              
+             
 
         #print(set_k_possible)
         #print(ff)
@@ -88,7 +88,7 @@ def run_GDT(Inventories, Proba_product, ITERATIONS_MAX=10, eps_stop=0):
 
         # chooses the N lowest reduced costs among the branches of lambda_found, and returns the new_sigma_GDT with the new sigmas
         [new_sigma_GDT, new_A, new_rc] = lowest_reduced_cost(set_k_possible, sigma_GDT, nb_prod, alpha_found, nu_found,
-                                                             Inventories, 40)
+                                                             Inventories, 5) #10
         
         #print("new_rc", new_rc)
         # concatenates sigma, A

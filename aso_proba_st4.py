@@ -36,8 +36,8 @@ def sigma_digest_save_result(sigmas, lambdas, nb_prod, d):
 
 
 algo_chosen = 'GDT'
-data_version =  '030' 
-nor = '3' # number of runs
+data_version =  '049' 
+nor = '1' # number of runs
 
 filename_transaction        = 'transaction_data_bal_'+  data_version + '.dat'
 filename_choice_model_GDT   = 'choice_model_GDT_bal_'+  data_version + '.dat'
@@ -76,6 +76,7 @@ with open(abs_file_transaction, 'rb') as sales:
     predicted_rev_data = my_depickler.load()
     products_data = my_depickler.load()
     ass_data = my_depickler.load()
+    rev_all_products = my_depickler.load()
     
 with open(abs_file_choice_model_GDT, 'rb') as sales:
     my_depickler = pickle.Unpickler(sales)
@@ -83,8 +84,8 @@ with open(abs_file_choice_model_GDT, 'rb') as sales:
     lambda_GDT_sorted =   my_depickler.load()    
     
 (nb_asst, nb_prod) = Inventories.shape
-Lambda = lambda_GDT_sorted[:10] #nb of lambds that explains most of the sales !!!! 
-Sigma = sigma_GDT_sorted[:10]   
+Lambda = lambda_GDT_sorted #[:10] #nb of lambds that explains most of the sales !!!! 
+Sigma = sigma_GDT_sorted #[:10]   
 
 d = []   
 for el in dic:
@@ -104,9 +105,11 @@ for product in real_revenue:
         if (product[0] in row[1]):
             #if (len(row[1]) < 2):
             Rev_BaselineNew +=product[1]*row[0]
+            
+            
 
 
-input_data =[5,10,15,20,25,30,35,40,45]
+input_data =[5,10,15,20,25,30,35,40,45,50]
 main_result = []
 
 
@@ -130,15 +133,25 @@ for min_num in input_data:
                 aso_result.append(v[1])
     
     same_prod= np.intersect1d(Prod_List_Max,  aso_result)
-    diff_prod = np.setdiff1d(aso_result, Prod_List_Max)   
-    inc_rev = (obj_val - Rev_BaselineNew ) / Rev_BaselineNew
+    diff_prod = np.setdiff1d(aso_result, Prod_List_Max) 
+    exc_prod = np.setdiff1d(Prod_List_Max , same_prod)
+    
+    Pred_rev_GDT = 0 
+    for q in rev_all_products:
+        for row in sigma_prod_list:
+            if ( (q[0] in aso_result) and (q[0] in row[1] )  ):
+            #if (len(row[1]) < 2):
+                Pred_rev_GDT +=q[1]*row[0]  
+    
+    
+    inc_rev = (Pred_rev_GDT - Rev_BaselineNew ) / Rev_BaselineNew
    
-    main_result.append( (min_num, t2-t1, len(aso_result),aso_result,list(same_prod),list(diff_prod), obj_val, Rev_BaselineNew,inc_rev ) )
+    main_result.append( (min_num, t2-t1, len(aso_result),aso_result,list(same_prod),list(diff_prod), list(exc_prod) , Pred_rev_GDT, Rev_BaselineNew,inc_rev ) )
 
-    print((min_num, t2-t1, len(aso_result),aso_result,list(same_prod),list(diff_prod), obj_val, Rev_BaselineNew,inc_rev ))
+    print((min_num, t2-t1, len(aso_result),aso_result,list(same_prod),list(diff_prod), list(exc_prod) , Pred_rev_GDT, Rev_BaselineNew,inc_rev ))
 
 
-'''   
+
 filename_result_       = 'result_with_prod_bucket_data_bal_'+ nor + '_' + data_version + '.dat'
 script_dir  = '/home/oleh/assortment_optimization-master/sample'
     #os.path.dirname(__file__) 
@@ -152,11 +165,12 @@ with open(filename_result_ ,'wb') as aso_:
 
 
 
-
+'''
 with open(abs_filename_result_, 'rb') as aso__:
     my_depickler = pickle.Unpickler(aso__)
     main_result =     my_depickler.load()
-''' 
+
+
 import matplotlib.pyplot as plt
 for  rev_history in  main_result:
     #if (  (len(rev_history[5]) > 0) and  (rev_history[0] not in (21,22,23,24)) ):  
@@ -175,4 +189,6 @@ plt.xlabel("Number of products")
 plt.ylabel("Number of new recommended products")   
 plt.legend()
 plt.show() 
+
+'''
     

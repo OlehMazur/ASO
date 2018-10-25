@@ -7,9 +7,11 @@ from collections import Counter
 from more_itertools import unique_everseen
 from gurobipy import *
 
+Sigma = sigma_GDT_sorted
+Lambda = lambda_GDT_sorted
 
-min_capacity = 3
-max_capacity = 100
+min_capacity = 0
+max_capacity = 7
 
 
 
@@ -84,6 +86,8 @@ for k in range(nb_col):
             if Sigma[k,j]==Sigma[k,i]:
                 prob+= des_var[(k,i)] - des_var[(k,j)] <= 2 - x[i] - x[j]
                 prob+= -des_var[(k,i)] + des_var[(k,j)] <= 2 - x[i] - x[j]
+                
+            
   
 '''
 constrs = model.getConstrs()
@@ -92,10 +96,10 @@ for i in range(len(constrs)):
 '''
   
     
-
+'''
 for k in range(nb_col):
         prob+= lpSum( des_var[(k,i)] for i in range(nb_prod)) == 1
-
+'''
 
 for k in range(nb_col):
     for i in real_products:
@@ -139,7 +143,12 @@ prob.setSolver(solver)
 
 
 prob.writeLP("SO_pulp.lp")
+
 prob.solve()
+
+##pulp.GLPK_CMD()
+##COIN_CMD()
+
 
 for v in prob.variables():
     if (v.varValue >0):
@@ -152,13 +161,26 @@ print(value(prob.objective))
 print("Status:", LpStatus[prob.status])
 
 
+#pulp.pulpTestAll()
 
 
 
+'''
 
+pi_data = prob.constraints
 
+pi_index = pi_data.keys()
 
+for ind in pi_index :
+    #if (pi_data[ind].pi < 0):
+    print(pi_data[ind].pi )
+    
+for name, c in list(prob.constraints.items()):
+    print(name, ":", c, "\t", c.pi, "\t\t", c.slack)
 
+for name, c in list(prob.constraints.items()):
+    print( c.pi)    
+'''
 
 
 
