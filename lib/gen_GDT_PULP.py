@@ -13,8 +13,10 @@ import lib.pulp_GDT as pGDT
 def run_GDT(Inventories, Proba_product, ITERATIONS_MAX=10, eps_stop=0):
     t1 = time.time()
     # to print the line of progress. Only possible when the ITERATIONS_MAX stop criterion is used.
+    '''
     if (eps_stop == 0):
         utilities.startProgress("Progress of iterations:")
+    '''    
 
     # if eps_stop=0, then we use the number of iterations specified as stop criterion
     # if eps_stop=0, then the stop criteron becomes obj < obj_stop=eps_stop*2*len(Inventories)
@@ -53,14 +55,14 @@ def run_GDT(Inventories, Proba_product, ITERATIONS_MAX=10, eps_stop=0):
         pGDT.restricted_master_main_PULP(A, v)
     history_obj_val[0] = obj_val_master
     #history_time_method[0] = time_method
-    print(obj_val_master)
+    #print(obj_val_master)
 
     rc = reduced_cost_matrix(A, alpha_found, nu_found)
 
     # Iterations of the columns generation procedure
     # if stop criterion is the maximum number of iterations, then we stop after ITERATIONS_MAX iterations
     for w in range(ITERATIONS_MAX):
-        print(w)
+        print('epoch ', w)
         # We do not want to consider splitting a consumer's behavior that has already put the no-choice option in the sequence
         # the consumer's behaviors that already have ranked the no-choice option are therefore excluded from the set of set_k_possible
         lambda_found_bis = np.copy(lambda_found)
@@ -107,10 +109,12 @@ def run_GDT(Inventories, Proba_product, ITERATIONS_MAX=10, eps_stop=0):
 
         history_obj_val = np.append(history_obj_val, obj_val_master)
         #history_time_method = np.append(history_time_method, time_method)
-
+        
+        '''
         # updating the progress bar
         if (eps_stop == 0):
             utilities.progress(100 * w / ITERATIONS_MAX)
+        '''    
 
         # checking the stop criterion if this is not with a defined number of iterations
         if (obj_stop > 0 and obj_val_master < obj_stop):
@@ -124,10 +128,13 @@ def run_GDT(Inventories, Proba_product, ITERATIONS_MAX=10, eps_stop=0):
     # we sort the columns by order of lambda
     sigma_GDT_sorted = a[np.argsort(b), :][::-1]
     lambda_GDT_sorted = b[np.argsort(b)][::-1]
-
+    
+    '''
     # to close the connection to the line of progress
     if (eps_stop == 0):
         utilities.endProgress()
+    '''    
+    
     t2=time.time()
     #print("Time to compute:", history_time_method)
     print("total time:", t2-t1)
