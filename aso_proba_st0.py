@@ -17,6 +17,8 @@ import datetime
 #from sklearn.cluster import AgglomerativeClustering
 #import scipy.cluster.hierarchy as sch
 
+time1 = time.time()
+
 def get_week(year, month , day):
     dt = datetime.date(year, month, day)
     wk = dt.isocalendar()[1]
@@ -80,10 +82,7 @@ ff2 = ff2[ (ff2["Network"] == 'Пятёрочка') & (ff2["Category"] == 'Пи�
 tt = ff2.groupby(['Shop_Id']).agg({'Quantity': np.sum, 'SalesValue': np.sum})
 tt["Assortment"] = ff2.groupby(['Shop_Id'])['SKU_Id'].nunique()
 
-time1 = time.time()
 result = tt.compute()
-time2 = time.time()
-print(time2-time1, 'sec')
 
 #sku_dic.groupby(sku_dic["Client"]).size().compute()
 
@@ -205,7 +204,9 @@ output_data_p2 = output_data_p2[["AssKey", "SKU_Id", "xname", "Revenue", "No-pur
 #encoding = 'cp1251'
 output_data_p2.to_csv("GDT_Input.csv", sep = '|', index = False )
 
-
+time2 = time.time()
+print('done !')
+print(time2-time1, 'sec')
 
 
 

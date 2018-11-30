@@ -11,7 +11,7 @@ import sys
 print("################################# File learn_choice_model.py #################################")
 print("Learning of the choice model")
 
-NB_ITER =5 #20  #if eps_stop is different than 0, NB_ITER ignored
+NB_ITER = 20  #20  #if eps_stop is different than 0, NB_ITER ignored
 eps_stop= 0
 data_version = '096'
 algo_chosen  = 'GDT'  #'GDT'

@@ -14,11 +14,10 @@ import os
 
 
 print("################################# File generation_data_products_based.py #################################")
-print("Generation of the training and test sets")
-print("Use of the MMNL choice model to generate utilities on products.")
 
-data_version = '096' #096
-dataset = pd.read_csv("GDT_96.csv", delimiter = ";", decimal = ",", index_col = [0,1])
+
+data_version = '001' #096
+dataset = pd.read_csv("GDT_Input.csv", delimiter = "|", decimal = ",", index_col = [0,1])
 #dataset = dataset[dataset["PurchaseProb"] >=0.05] #0.05,  0.1
 
 '''
@@ -35,7 +34,7 @@ train, test = dataset.iloc[0:train_size,:], dataset.iloc[test_size:len(dataset),
 
 Proba_product_ = dataset.iloc[:, -1]
 Proba_product_nc = dataset.iloc[:, -2]
-Revenue = dataset.iloc[:, 0]
+Revenue = dataset.iloc[:, 1]
 
 '''
 Proba_product_test = test.iloc[:, -1]
@@ -98,8 +97,8 @@ for k,l in enumerate(ass):
             inventories[k,i] = True
             dic[i] =  (i, j)           
             #ass_revenue.append((l, Proba_product_[(l,j)] *Revenue[(l,j)]))
-            ass_revenue.append((l, Revenue[(l,j)]))
-            rev_prod_list.append ( (j,Revenue[(l,j)] ))   
+            ass_revenue.append((l, np.float64(Revenue[(l,j)])))
+            rev_prod_list.append ( (j, np.float64(Revenue[(l,j)]) ))   
             #rev_predicted.append((l,j,Revenue[(l,j)] ))
             #if((l,j) == ('138308', 57275)):
                 #print (input_data[k,i])
@@ -164,7 +163,7 @@ with open(abs_file_transaction, 'wb') as sales:
 print("End of generation of data. File ", filename_transaction, "has been saved in /sample/data/.")
 print("#######################################################################################")
 #  end of exportation of the generated data
-#####################################
+#####################################rfcnjvspfwsz 
 
 print("Average probability of no-choice:", np.average(input_data[:,0]))
 
