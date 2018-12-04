@@ -76,6 +76,7 @@ inventories = np.zeros_like(input_data, dtype=bool)
 dic= np.zeros(nb_prod,dtype=object)
 ass_revenue = np.zeros(nb_ass, dtype = np.float64)
 rev_prod_list = []
+prod_with_name = []
 #rev_predicted = []
 
 
@@ -98,7 +99,8 @@ for k,l in enumerate(ass):
             dic[i] =  (i, j)           
             #ass_revenue.append((l, Proba_product_[(l,j)] *Revenue[(l,j)]))
             ass_revenue.append((l, np.float64(Revenue[(l,j)])))
-            rev_prod_list.append ( (j, np.float64(Revenue[(l,j)]) ))   
+            rev_prod_list.append ( (j, np.float64(Revenue[(l,j)]) ))  
+            prod_with_name.append((j, dataset.loc[(l, j) , 'xname']))
             #rev_predicted.append((l,j,Revenue[(l,j)] ))
             #if((l,j) == ('138308', 57275)):
                 #print (input_data[k,i])
@@ -126,6 +128,7 @@ for el in  prod_list_max:
                
 rev_max_prod  = list(set(rev_max_prod))
 rev_all_prod = list(set(rev_prod_list))
+prod_with_name = list(set(prod_with_name))
        
         
 filename_transaction = 'transaction_data_bal_'+data_version+'.dat'
@@ -151,6 +154,7 @@ with open(abs_file_transaction, 'wb') as sales:
     my_pickler.dump(ass) #test
     my_pickler.dump(rev_all_prod)
     my_pickler.dump(max_ass_num)
+    my_pickler.dump(prod_with_name)
    
     '''
     my_pickler.dump(products_test)
@@ -161,10 +165,6 @@ with open(abs_file_transaction, 'wb') as sales:
 
     
 print("End of generation of data. File ", filename_transaction, "has been saved in /sample/data/.")
-print("#######################################################################################")
-#  end of exportation of the generated data
-#####################################rfcnjvspfwsz 
-
 print("Average probability of no-choice:", np.average(input_data[:,0]))
 
 

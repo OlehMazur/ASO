@@ -13,7 +13,7 @@ print("Learning of the choice model")
 
 NB_ITER = 20  #20  #if eps_stop is different than 0, NB_ITER ignored
 eps_stop= 0
-data_version = '096'
+data_version = '001'  #'096'
 algo_chosen  = 'GDT'  #'GDT'
 
 #  Importation of the generated sales data

@@ -24,6 +24,8 @@ def get_week(year, month , day):
     wk = dt.isocalendar()[1]
     return wk
 
+period = 'month' # period month/week/day
+
 df_2018 = dd.read_csv("BG_2018_v2.csv", encoding = 'cp1251', delimiter = ";", decimal = "," 
                       ,dtype = {'Количество продукции Шт': 'float64'}
                       )
@@ -164,19 +166,19 @@ data_with_shop_cluster_df["week"]  = pd.to_datetime(data_with_shop_cluster_df[["
 
 data_with_shop_cluster_df["SalesNumber"] = data_with_shop_cluster_df["SKU_Id"]
 
-main = data_with_shop_cluster_df.groupby(['week', 'Shop_Id', 'SKU_Id', 'xname'], as_index = False) \
+main = data_with_shop_cluster_df.groupby([period, 'Shop_Id', 'SKU_Id', 'xname'], as_index = False) \
                 .agg({'Quantity': np.sum, 'SalesValue': np.sum, 'SalesNumber': np.size})
              
-main["AssKey"] = main["week"].astype(str) + main["Shop_Id"].astype(str)
+main["AssKey"] = main[period].astype(str) + main["Shop_Id"].astype(str)
 
 
 
-tns = data_with_shop_cluster_df.groupby(['week', 'Shop_Id'], as_index = False) \
+tns = data_with_shop_cluster_df.groupby([period, 'Shop_Id'], as_index = False) \
                 .agg({'Quantity': [np.min, np.max, np.sum]})
                 
-tns["TotalNumOfSales"] = data_with_shop_cluster_df.groupby(['week', 'Shop_Id'])['SKU_Id'].nunique().reset_index(drop=True)
-tns.columns = ['week', 'Shop_Id', 'minQuantity', 'maxQuantity', 'TotalSalesPerAss' , 'TotalNumOfSales']
-tns["AssKey"] = tns["week"].astype(str) + tns["Shop_Id"].astype(str)
+tns["TotalNumOfSales"] = data_with_shop_cluster_df.groupby([period, 'Shop_Id'])['SKU_Id'].nunique().reset_index(drop=True)
+tns.columns = [period, 'Shop_Id', 'minQuantity', 'maxQuantity', 'TotalSalesPerAss' , 'TotalNumOfSales']
+tns["AssKey"] = tns[period].astype(str) + tns["Shop_Id"].astype(str)
 
 
 rev = data_with_shop_cluster_df.groupby(['SKU_Id'], as_index = False) \
@@ -185,7 +187,7 @@ rev.columns = ['SKU_Id', 'Revenue']
 
 
 output_data_p1 = pd.merge (
-        main[['AssKey', 'week','Shop_Id', 'SKU_Id', 'xname', 'Quantity', 'SalesValue', 'SalesNumber'] ], 
+        main[['AssKey', period,'Shop_Id', 'SKU_Id', 'xname', 'Quantity', 'SalesValue', 'SalesNumber'] ], 
         tns[['AssKey', 'minQuantity', 'maxQuantity', 'TotalSalesPerAss','TotalNumOfSales']],
         how='left',
         on= 'AssKey')
@@ -199,6 +201,7 @@ output_data_p2 = pd.merge (
 
 output_data_p2["No-purchaseProb"] = 0.1+0.2*( output_data_p2["TotalNumOfSales"] / (output_data_p2["maxQuantity"] - output_data_p2["minQuantity"] ) )
 output_data_p2["PurchaseProb"] = (1 - output_data_p2["No-purchaseProb"] ) * (output_data_p2["Quantity"] / output_data_p2["TotalSalesPerAss"] ) 
+output_data_p2 = output_data_p2[ (output_data_p2["No-purchaseProb"] != np.inf) &  (output_data_p2["PurchaseProb"] != np.inf )]
 output_data_p2 = output_data_p2[["AssKey", "SKU_Id", "xname", "Revenue", "No-purchaseProb", "PurchaseProb"]]
 
 #encoding = 'cp1251'
@@ -207,7 +210,6 @@ output_data_p2.to_csv("GDT_Input.csv", sep = '|', index = False )
 time2 = time.time()
 print('done !')
 print(time2-time1, 'sec')
-
 
 
 

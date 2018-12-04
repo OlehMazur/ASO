@@ -10,10 +10,10 @@ import lib.fcns_asstopt_PULP as fcns_asstopt
 print("Optimization of the assortment given a choice model")
 
 min_capacity = 0
-max_capacity = 100
+max_capacity = 100 #100 no capacity constraint
 
 algo_chosen = 'GDT'
-data_version =  '096'  #096 
+data_version =  '001'  #096 
     
 filename_transaction        = 'transaction_data_bal_'+  data_version + '.dat'
 filename_choice_model_GDT   = 'choice_model_GDT_bal_PULP_'+  data_version + '.dat'
@@ -50,6 +50,7 @@ with open(abs_file_transaction, 'rb') as sales:
     ass_data = my_depickler.load()
     rev_all_products = my_depickler.load()
     max_ass_num_manual = my_depickler.load()
+    prod_name = my_depickler.load()
 
 if(algo_chosen=='GDT'):    
     print("Opening choice model, format GDT")
@@ -107,8 +108,9 @@ def sigma_digest2(sigmas, lambdas, nb_prod):
     
         for el in dd:
             for p, v in enumerate(d):
-                if( el == p and p >0 and el > 0):
-                    res.append(v[1])
+                for sku in prod_name:
+                    if( el == p and p >0 and el > 0 and v[1] == sku[0]):
+                        res.append(sku[1]) #v[1]
         print(res)
                
     return 1
@@ -148,7 +150,34 @@ sigma_result = sigma_digest_save_result (Sigma,Lambda, nb_prod)
 sigma_prod_list = []
 for item in sigma_result:
     sigma_prod_list.append((item[1], item[2]))
-
+ 
+#optimal assortmnet with SKU names    
+aso_result_SKU_name = []
+for sku_el in prod_name:
+    for sku_id in aso_result:
+        if sku_el[0] == sku_id:
+            aso_result_SKU_name.append(sku_el[1])
+    
+#same list of products
+aso_result_SKU_name_same = []
+for sku_el in prod_name:
+    for sku_id in same_prod:
+        if sku_el[0] == sku_id:
+            aso_result_SKU_name_same.append(sku_el[1])
+            
+#new list of products
+aso_result_SKU_name_new = []
+for sku_el in prod_name:
+    for sku_id in diff_prod:
+        if sku_el[0] == sku_id:
+            aso_result_SKU_name_new.append(sku_el[1])  
+            
+#excluded list of products
+aso_result_SKU_name_ex = []
+for sku_el in prod_name:
+    for sku_id in exc_prod:
+        if sku_el[0] == sku_id:
+            aso_result_SKU_name_ex.append(sku_el[1])              
 
 print("Generated data, in file ", filename_transaction, "with nb_prod =", nb_prod, "products")
 print('')
@@ -158,17 +187,25 @@ print("Optimal assortment found in", t2-t1, "seconds. Number of products", len(a
 print('')
 print(aso_result) #x_found
 print('')
+print(aso_result_SKU_name) 
+print('')
 print("List of common products in assorment with higher real revenue and optimal assortment: ")
 print('')
 print(list(same_prod))
+print('')
+print(aso_result_SKU_name_same)
 print('')
 print("List of new recommended products: ")
 print('')
 print(list(diff_prod))
 print('')
+print(aso_result_SKU_name_new)
+print('')
 print("List of excluded products: ")
 print('')
 print (list(exc_prod))
+print('')
+print(aso_result_SKU_name_ex)
 print('')
 print("Expected revenue of the optimal assortment:")
 print('{:04.2f}'.format(obj_val)) #obj_val
@@ -176,5 +213,9 @@ print("Expected baseline revenue according to GDT model:")
 print('{:04.2f}'.format(Rev_Baseline))
 print("Increase of revenue vs baseline:")
 print('{:04.2%}'.format( (obj_val - Rev_Baseline ) / Rev_Baseline))
+print('')
+print('Customer behavior (probabilities): ')
+print('')
+sigma_digest2(Sigma,Lambda, nb_prod)
 print('')
 print("Assortment optimization completed")   
